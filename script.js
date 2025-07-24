@@ -1,73 +1,67 @@
-
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-const toallaImg = new Image();
-toallaImg.src = "saba.png";
+const padImg = new Image();
+padImg.src = "saba.png";
 
-const gotaImg = new Image();
-gotaImg.src = "gota_sangre.png";
+const dropImg = new Image();
+dropImg.src = "gota_sangre.png";
 
-let toallaX = 120;
-let toallaY = 420;
-let gotas = [];
+let padX = canvas.width / 2 - 40;
+const padY = canvas.height - 100;
+const padSpeed = 10;
 
-let leftPressed = false;
-let rightPressed = false;
+let drops = [];
 
-document.addEventListener("keydown", e => {
-  if (e.key === "ArrowLeft") leftPressed = true;
-  if (e.key === "ArrowRight") rightPressed = true;
-});
-document.addEventListener("keyup", e => {
-  if (e.key === "ArrowLeft") leftPressed = false;
-  if (e.key === "ArrowRight") rightPressed = false;
-});
-
-function crearGota() {
-  const x = Math.random() * (canvas.width - 30);
-  gotas.push({ x: x, y: -30 });
+function createDrop() {
+  drops.push({ x: Math.random() * (canvas.width - 20), y: -40, speed: 2 + Math.random() * 3 });
 }
 
-function detectarColision(gota) {
-  return (
-    gota.y + 30 > toallaY &&
-    gota.x + 20 > toallaX &&
-    gota.x < toallaX + 60
-  );
+function drawPad() {
+  ctx.drawImage(padImg, padX, padY, 80, 100);
 }
 
-function update() {
-  if (leftPressed && toallaX > 0) toallaX -= 5;
-  if (rightPressed && toallaX < canvas.width - 60) toallaX += 5;
+function drawDrops() {
+  drops.forEach((drop) => {
+    ctx.drawImage(dropImg, drop.x, drop.y, 20, 20);
+  });
+}
 
-  for (let i = 0; i < gotas.length; i++) {
-    gotas[i].y += 4;
+function updateDrops() {
+  drops.forEach((drop, index) => {
+    drop.y += drop.speed;
 
-    if (detectarColision(gotas[i])) {
-      gotas.splice(i, 1);
-      i--;
-    } else if (gotas[i].y > canvas.height) {
-      gotas.splice(i, 1);
-      i--;
+    // Check collision
+    if (
+      drop.y + 20 >= padY &&
+      drop.x + 10 >= padX &&
+      drop.x <= padX + 80
+    ) {
+      drops.splice(index, 1); // Caught
     }
-  }
+
+    // Remove if out of bounds
+    if (drop.y > canvas.height) {
+      drops.splice(index, 1);
+    }
+  });
 }
 
-function draw() {
+function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(toallaImg, toallaX, toallaY, 60, 80);
+  drawPad();
+  drawDrops();
+  updateDrops();
+  requestAnimationFrame(gameLoop);
+}
 
-  for (let gota of gotas) {
-    ctx.drawImage(gotaImg, gota.x, gota.y, 20, 30);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowLeft" && padX > 0) {
+    padX -= padSpeed;
+  } else if (e.key === "ArrowRight" && padX < canvas.width - 80) {
+    padX += padSpeed;
   }
-}
+});
 
-function loop() {
-  update();
-  draw();
-  requestAnimationFrame(loop);
-}
-
-setInterval(crearGota, 1000);
-loop();
+setInterval(createDrop, 1000);
+gameLoop();
